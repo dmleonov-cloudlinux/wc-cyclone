@@ -11,6 +11,8 @@ class Generate {
 	 * @return [type]       [description]
 	 */
 	public static function product( $type ) {
+		global $wpdb;
+
 		// use the factory to create a Faker\Generator instance
 		$faker = \Faker\Factory::create();
 
@@ -52,6 +54,90 @@ class Generate {
 			$terms = [$product['category']];
 			wp_set_object_terms( $post_id, $terms, 'product_cat', true );
 
+			//Add tags
+			wp_set_object_terms(
+				$post_id, 
+				[
+					$faker->words(1, true),
+					$faker->words(1, true),
+					$faker->words(1, true)
+				], 
+				'product_tag'
+			);
+
+			$j = rand(0, 30);
+			for ($i=0; $i < $j; $i++) { 
+				$attr_name = $faker->words(1, true);
+				$attr_value = $faker->words(1, true);
+
+				//add new only sometimes
+				if (rand(0, 10) > 3) {
+					$taxonomies = get_taxonomies(['name__like' => 'pa_']);
+					if (is_array($taxonomies) && !empty($taxonomies)) {
+						$attr_name = str_replace('pa_', '', array_rand($taxonomies));
+					}
+				}
+
+				$attr = [
+					'id' => '',
+					'slug'    => $attr_name,
+					'name'   => __( $attr_name, 'woocommerce' ),
+					'type'    => 'select',
+					'orderby' => 'menu_order',
+					'has_archives'  => false,
+					'limit' => 1,
+					'is_in_stock' => 1
+				];
+				wc_create_attribute($attr);
+				
+				//term of taxonomy
+				$wpdb->insert($wpdb->prefix.'terms', [
+					'name' => $attr_value,
+					'slug' => $attr_value,
+					'term_group' => '0'
+				]);
+
+				$term_id = $wpdb->insert_id;
+
+				$wpdb->insert($wpdb->prefix.'term_taxonomy', [
+					'term_id' => $term_id,
+					'taxonomy' => 'pa_'.$attr_name,
+					'parent' => '0',
+					'count' => '0'
+				]);
+
+				$term_id =  $wpdb->insert_id;
+
+				$wpdb->insert($wpdb->prefix.'termmeta', [
+					'term_id' => $term_id,
+					'meta_key' => 'order_pa_'.$attr_name,
+					'meta_value' => '0'
+				]);
+
+				$attr_param = [
+						'pa_'.$attr_name => [
+							'name'=> 'pa_'.$attr_name,
+							'value'=> $attr_value,
+							'is_visible' => 1,
+							'is_taxonomy' => 1,
+							'position' => 0,
+							'is_variation' => 0
+						]
+					];
+
+				$post_meta = get_post_meta($post_id, '_product_attributes');
+				if (is_array($post_meta[0])) {
+					$attr_param = array_merge($attr_param, $post_meta[0]);
+				}
+				update_post_meta( $post_id, '_product_attributes', $attr_param);
+
+				$wpdb->insert($wpdb->prefix.'term_relationships', [
+					'object_id' => $post_id,
+					'term_taxonomy_id' => $term_id,
+					'term_order' => '0'
+				]);
+			}
+			
 			// add tags (@todo)
 			// add attributes (@todo)
 			// add variations (@todo)
