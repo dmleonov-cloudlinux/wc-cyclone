@@ -278,7 +278,7 @@ class Commands extends WP_CLI_Command {
 
 		$success = 0;
 		for($x = 0; $x < $amount; $x++) {
-			$generate = Generate::product( $type );
+			$generate = Generate::product( $type, $x );
 			if ( $generate ) {
 				$success++;
 			}
