@@ -20,8 +20,8 @@ class Generate {
 		// Generate a product title & category from Faker
 		// --- will keep going until it has a unique product title
 		// do {
-			//$title = ucwords( $faker->words( 2, true ) );
-			$title = "Product " . $x;
+			$title = ucwords( $faker->words( 2, true ) );
+			//$title = "Product " . $x;
 			$category = $faker->randomElement( array( 'Drama', 'Mystery', 'Romance', 'Horror', 'Travel', 'Health' ) );
 		// } while( get_page_by_title( $title, 'OBJECT', 'product' ) );
 
